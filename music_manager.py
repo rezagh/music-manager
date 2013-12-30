@@ -41,7 +41,8 @@ class MusicManager():
 		"""apply a list of regex to all meta values. if no regex provided will use common ones"""
 		for meta in self.metas:
 			meta_keys = list(meta)
-			for key in meta_keys:
+			valid_keys = [key for key in meta_keys if key != "audio"]
+			for key in valid_keys:
 				value = meta[key]
 				if regex_list is None or len(regex_list) == 0:
 					value = self.apply_common_regex_list(value)
@@ -56,8 +57,8 @@ class MusicManager():
 
 
 
-path = '/Users/rezaghafari/Music/music'
-
+#path = '/Users/rezaghafari/Music/music'
+path = '/Users/rezaghafari/Music/test1'
 
 def create_metadata():
     metas = []
