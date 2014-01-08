@@ -1,1 +1,4 @@
+doing show_meta
+
+do not write a generic music manager now. just fix your own music first!
 add a pprint to list meta by a regex

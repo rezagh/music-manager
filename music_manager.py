@@ -2,91 +2,120 @@ import re
 import os
 from mutagen.easyid3 import EasyID3
 
-class MusicManager():
+class MusicManager(object):
 	
 	metas = []
 	replace_www_url= r'(?i)\(.*www.*\.com.*\)'
 	replace_http_url=''
 	common_regex_list=[replace_www_url]
 	
-	def __init__(self):
-		self.metas = create_metadata()
+# 	def __init__(self):
+# 		self.metas = create_metadata()
 
-	def f__init__(self,library_path):
+	def __init__(self,library_path):
 		self.metas = create_metadata(library_path)
 		
 	def count(self):
 		return len(self.metas)
-	
-	def apply_common_regex_list(self,value):
-		''' apply all common regex to this value string '''
-		for regex in self.common_regex_list:
+
+	def apply_regexes(self,value,regexes):
+		''' apply a bunch of regexes '''
+
+		for regex in regexes:
 			value = re.sub(regex,"",value)
-		
-		print 'final value:' + value	
-		return value;
-	
-	#apply a regex 				
-	def apply_regex(self,value,regex):
-		value =  re.sub(regex,"",value)
+
 		print 'final value:' + value	
 		return value
 	
 	def set_audio_meta(self,audio, key, value):
 		audio[key] = value
 		audio.save()
+
+# 	def set_meta(self,file_path,meta_name,meta_value):
+# 		if meta_name == 'audio' or meta_name == 'path' or meta_name == 'filename' :
+# 			return
+# 		audio = EasyID3(file_path)
+# 		audio[meta_name] = meta_value
+# 		audio.save()
 		
-		
-	def fix_bad_meta(self,*regex_list):
-		"""apply a list of regex to all meta values. if no regex provided will use common ones"""
+# 	def show_meta(self):
+# 		for meta in self.metas:
+# 			meta_keys = list(meta)
+# 			valid_keys = [key for key in meta_keys if key != "audio"]
+# 			print meta["path"]
+# 			for key in valid_keys:
+# 				value = meta[key]
+# 				print "  " + key + " : " + value
+			
+
+	def show_meta(self, *regex):
+		def print_it():
+			
 		for meta in self.metas:
 			meta_keys = list(meta)
 			valid_keys = [key for key in meta_keys if key != "audio"]
 			for key in valid_keys:
 				value = meta[key]
-				if regex_list is None or len(regex_list) == 0:
-					value = self.apply_common_regex_list(value)
-					# set the value back
-				else:
-					value = self.apply_regex(value,regex_list[0])
-					# set the value back
+				if regex is None or len(regex) == 0:
+
+				if re.search(regex, value) is not None:
+					print meta["path"]
+					print "  " + key + " : " + value
+
 				
-				#set_audio_meta(meta["audio"],key,value)
+	def fix_bad_meta(self,*regex_tuple):
+		"""apply a list of regexes to all meta values. if no regex provided will use common regexes"""
+		for meta in self.metas:
+			meta_keys = list(meta)
+			valid_keys = [key for key in meta_keys if key != "audio"]
+			for key in valid_keys:
+				value = meta[key]
+				if regex_tuple is None or len(regex_tuple) == 0:
+					value = self.apply_regexes(value, self.common_regex_list)
+				else:
+					value = self.apply_regexes(value,regex_tuple)
 
 
 
 
+def create_metadata(path):
+	''' path is either a single file path or a dir'''
 
-#path = '/Users/rezaghafari/Music/music'
-path = '/Users/rezaghafari/Music/test1'
+	def get_audio_meta(audio,meta_name):
+	    #the following returns a list 
+	    try:
+	        value = audio[meta_name] [0]
+	        return str(value)
+	    except Exception:
+	        return ""
+	
+	def get_meta(file_path):
+		local_meta = {}
+		audio = EasyID3(file_path)
+		local_meta["audio"] = audio
+		local_meta["path"] = file_path
+		local_meta["filename"]= os.path.split(file_path)[1]
+		local_meta["title"] = get_audio_meta(audio,'title')
+		local_meta["artist"]=get_audio_meta(audio,'artist')
+		local_meta["album"]=get_audio_meta(audio,'album')
+		local_meta["performer"] = get_audio_meta(audio,'performer')
+		local_meta["composer"]=get_audio_meta(audio,'composer')
+		local_meta["genre"]=get_audio_meta(audio,'genre')
+		return local_meta
 
-def create_metadata():
-    metas = []
-    for dirpath, dirnames, filenames in os.walk(path):
-        for f in filenames:
-            if '.mp3' in f or '.MP3' in f:
-                file_path = dirpath + '/' + f
-                #do_regex_www(title, dirpath + '/' + f)
-                #do_regex_http(title, dirpath + '/' + f)
-                meta = {}
-                audio = EasyID3(file_path)
-                meta["audio"] = audio
-                meta["path"] = file_path
-                meta["title"] = get_audio_meta(audio,'title')
-                meta["artist"]=get_audio_meta(audio,'artist')
-                meta["album"]=get_audio_meta(audio,'album')
-                meta["performer"] = get_audio_meta(audio,'performer')
-                meta["composer"]=get_audio_meta(audio,'composer')
-                meta["genre"]=get_audio_meta(audio,'genre')
-                
-                #print meta
-                metas.append(meta)
-    return metas
+	metas = []
 
-def get_audio_meta(audio,meta_name):
-    #the following returns a list 
-    try:
-        value = audio[meta_name] [0]
-        return str(value)
-    except Exception:
-        return ""
+	if os.path.isfile(path):
+		metas.append(get_meta(path))
+		
+	if os.path.isdir(path):
+	    for dirpath, dirnames, filenames in os.walk(path):
+	        for f in filenames:
+	            if '.mp3' in f or '.MP3' in f:
+	                file_path = dirpath + '/' + f
+	                metas.append(get_meta(file_path))
+	return metas
+    	
+
+
+
