@@ -2,6 +2,7 @@ import re
 import os
 from mutagen.easyid3 import EasyID3
 
+
 class MusicManager(object):
 	
 	metas = []
@@ -46,22 +47,39 @@ class MusicManager(object):
 # 			for key in valid_keys:
 # 				value = meta[key]
 # 				print "  " + key + " : " + value
-			
 
-	def show_meta(self, *regex):
-		def print_it():
-			
-		for meta in self.metas:
+
+
+	def show_meta(self, show_other_fields= True, regex=None):
+		def get_valid_keys(meta):
 			meta_keys = list(meta)
-			valid_keys = [key for key in meta_keys if key != "audio"]
-			for key in valid_keys:
-				value = meta[key]
-				if regex is None or len(regex) == 0:
-
-				if re.search(regex, value) is not None:
-					print meta["path"]
-					print "  " + key + " : " + value
-
+			return [key for key in meta_keys if key != "audio" and key != "path"]
+			
+		if regex is None:
+			for meta in self.metas:
+				print meta["path"]
+				for key in get_valid_keys(meta):
+					print " " + key + " :" + meta[key]
+		else:
+			matching={}
+			non_matching={}
+			for meta in self.metas:
+				for key in get_valid_keys(meta):
+					value = meta[key]
+					if re.search(regex, value) is not None:
+						matching[key] = value;
+					else:
+						non_matching[key] = value
+						
+			if len(matching) > 0:
+				print meta["path"]
+				for key in matching.keys():
+					print "  " + key + " : " + matching[key]
+				if show_other_fields == True:
+					for key in non_matching.keys():
+						print "  " + key + " : " + non_matching[key]
+						
+			
 				
 	def fix_bad_meta(self,*regex_tuple):
 		"""apply a list of regexes to all meta values. if no regex provided will use common regexes"""

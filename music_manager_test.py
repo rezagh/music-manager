@@ -13,3 +13,5 @@ print mm.count()
 #mm.fix_bad_meta()
 
 #print mm.apply_common_regex_list("")
+
+mm.show_meta(True,"Bia")
